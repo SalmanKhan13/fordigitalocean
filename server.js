@@ -4,8 +4,6 @@ const FILE_PATH = 'stats.json';
 const app = express();
 
 
-
-
 const getRoute = (req) => {
   const route = req.route ? req.route.path : ''; // check if the handler exist
   const baseUrl = req.baseUrl ? req.baseUrl : ''; // adding the base url if the handler is child of other handler
@@ -56,7 +54,9 @@ app.get("/stats/", (req, res) => {
   res.json(readStats())
 })
 
-
+app.get("/salmantesting/", (req, res) => {
+  res.json("Testing for commit");
+})
 const PORT = process.env.PORT || 7777;
 app.listen(PORT, err => {
   if (err) {

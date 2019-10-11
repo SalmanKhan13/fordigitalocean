@@ -1,1 +1,1 @@
-{"GET /stats/ 200":3,"GET /api/ 200":4,"GET / 200":1}
+{"GET /stats/ 200":9,"GET /api/ 200":6,"GET / 200":3,"GET unknown route 404":1}
