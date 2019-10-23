@@ -102,7 +102,7 @@ app.post('/get_device_data_by_device_id', (req, res) => {
   params = {
     device_id: req.body.device_id
   }
-  axios.post('http://52.74.161.171/publish_mw_api/Api/mw/get_device_data_by_device_id?device_id=mywater-16602669786831168046', params).then(response => {
+  axios.post(`http://52.74.161.171/publish_mw_api/Api/mw/get_device_data_by_device_id?device_id=${req.query.device_id}`).then(response => {
     res.send(response.data);
   }).catch(err => res.status(404).json(err));
 });
