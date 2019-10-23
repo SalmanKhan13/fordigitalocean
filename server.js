@@ -181,6 +181,22 @@ app.get('/get_coupons_by_customer_id/', (req, res) => {
   }).catch(err => res.status(404).json(err));
 });
 
+app.post('/deactivate_coupon', (req, res) => {
+
+  axios.post(`http://52.74.161.171/publish_mw_api/api/coupon/deactivate_coupon?coupon_no=${req.query.coupon_no}`).then(response => {
+    res.send(response.data);
+  }).catch(err => res.status(404).json(err));
+});
+
+app.post('/verify_coupon', (req, res) => {
+
+  axios.post(`http://52.74.161.171/publish_mw_api/api/coupon/verify_coupon?coupon_no=${req.query.coupon_no}`).then(response => {
+    res.send(response.data);
+  }).catch(err => res.status(404).json(err));
+});
+
+
+
 
 
 
