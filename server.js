@@ -1,7 +1,7 @@
 const express = require("express");
-const Request = require("request");
 const bodyParser = require('body-parser');
 var axios = require('axios');
+const fs = require('fs');
 const app = express();
 
 
@@ -9,6 +9,56 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+const FILE_PATH = 'stats.json';
+const getRoute = (req) => {
+  const route = (req.route ? req.route.path : ''); // check if the handler exist
+  const baseUrl = req.baseUrl ? req.baseUrl : ''; // adding the base url if the handler is child of other handler
+
+  return route ? `${baseUrl === '/' ? '' : baseUrl}${route}` : 'unknown route';
+}
+// read json object from file
+const readStats = () => {
+  let result = {}
+  try {
+    result = JSON.parse(fs.readFileSync(FILE_PATH))
+  } catch (err) {
+    console.error(err)
+  }
+  return result
+}
+
+// dump json object to file
+const dumpStats = (stats) => {
+  try {
+    fs.writeFileSync(FILE_PATH, JSON.stringify(stats), { flag: 'w+' })
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    const stats = readStats()
+    const event = `Method: ${req.method} Route_Url: ${getRoute(req)} Status_Code: ${res.statusCode}`;
+    console.log(req._parsedUrl);
+    for (header in req.headers) {
+      if (header === "accept") continue;
+      if (header === "accept-encoding") continue;
+      if (header === "postman-token") continue;
+      if (header === "cache-control") continue;
+      var value = req.headers[header];
+      console.log(header + ': ' + value);
+    }
+    console.log(res);
+    stats[event] = stats[event] ? stats[event] + 1 : 1
+    dumpStats(stats)
+  })
+  next()
+})
+
+app.get("/statistics/", (req, res) => {
+  res.send(readStats())
+})
 
 app.post('/get_service_detail', (req, res) => {
   params = {
@@ -19,6 +69,8 @@ app.post('/get_service_detail', (req, res) => {
   }).catch(err => res.status(404).json(err));
 });
 
+
+
 app.post('/sign_up', (req, res) => {
   params = {
     first_name: req.body.first_name,
@@ -26,7 +78,6 @@ app.post('/sign_up', (req, res) => {
     primary_number: req.body.primary_number,
     password: req.body.password,
     email: req.body.email
-
   }
   axios.post('http://52.74.161.171/publish_mw_api/Api/mw/sign_up', params).then(response => {
     res.send(response.data);
@@ -53,6 +104,7 @@ app.post('/verify_customer', (req, res) => {
     res.send(response.data);
   }).catch(err => res.status(404).json(err));
 });
+
 
 app.post('/forgot_password', (req, res) => {
   params = {
@@ -88,6 +140,8 @@ app.post('/update_device_setting', (req, res) => {
     res.send(response.data);
   }).catch(err => res.status(404).json(err));
 });
+
+
 app.post('/get_devices_customer_id', (req, res) => {
   params = {
     customer_id: req.body.customer_id
@@ -98,8 +152,8 @@ app.post('/get_devices_customer_id', (req, res) => {
   }).catch(err => res.status(404).json(err));
 });
 
-app.post('/get_device_data_by_device_id', (req, res) => {
 
+app.post('/get_device_data_by_device_id', (req, res) => {
   axios.post(`http://52.74.161.171/publish_mw_api/Api/mw/get_device_data_by_device_id?device_id=${req.query.device_id}`).then(response => {
     res.send(response.data);
   }).catch(err => res.status(404).json(err));
@@ -124,6 +178,7 @@ app.post('/get_invoice_detail', (req, res) => {
   }).catch(err => res.status(404).json(err));
 });
 
+
 app.post('/get_service_list', (req, res) => {
   params = {
     customer_id: req.body.customer_id
@@ -132,6 +187,7 @@ app.post('/get_service_list', (req, res) => {
     res.send(response.data);
   }).catch(err => res.status(404).json(err));
 });
+
 
 app.post('/get_service_detail', (req, res) => {
   params = {
@@ -151,6 +207,7 @@ app.post('/verify_coupon', (req, res) => {
     res.send(response.data);
   }).catch(err => res.status(404).json(err));
 });
+
 
 app.post('/generate_coupon', (req, res) => {
   params = {
@@ -174,22 +231,18 @@ app.post('/generate_coupon', (req, res) => {
 
 
 app.get('/get_coupons_by_customer_id/', (req, res) => {
-
-
   axios.get(`http://52.74.161.171/publish_mw_api/Api/coupon/get_coupons_by_customer_id?customer_id=${req.query.customer_id}`).then(response => {
     res.send(response.data);
   }).catch(err => res.status(404).json(err));
 });
 
 app.post('/deactivate_coupon', (req, res) => {
-
   axios.post(`http://52.74.161.171/publish_mw_api/api/coupon/deactivate_coupon?coupon_no=${req.query.coupon_no}`).then(response => {
     res.send(response.data);
   }).catch(err => res.status(404).json(err));
 });
 
 app.post('/verify_coupon', (req, res) => {
-
   axios.post(`http://52.74.161.171/publish_mw_api/api/coupon/verify_coupon?coupon_no=${req.query.coupon_no}`).then(response => {
     res.send(response.data);
   }).catch(err => res.status(404).json(err));
@@ -197,12 +250,7 @@ app.post('/verify_coupon', (req, res) => {
 
 
 
-
-
-
-
 app.get('/get_devices_by_coupon_no', (req, res) => {
-
   axios.get(`http://52.74.161.171/publish_mw_api/api/coupon/get_devices_by_coupon_no?coupon_no=${req.query.coupon_no}`).then(response => {
     res.send(response.data);
   }).catch(err => res.status(404).json(err));
