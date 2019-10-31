@@ -2,12 +2,16 @@ const express = require("express");
 const bodyParser = require('body-parser');
 var axios = require('axios');
 const fs = require('fs');
+var moment = require('moment');
+var geoip = require('geoip-lite');
+const expressip = require('express-ip');
 const app = express();
 
 
 // Body parser middleware
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(expressip().getIpInfoMiddleware);
 
 const FILE_PATH = 'stats.json';
 const getRoute = (req) => {
@@ -37,27 +41,74 @@ const dumpStats = (stats) => {
 }
 
 app.use((req, res, next) => {
+  res.timeStart = new Date();
+  // console.log(res.timeStart);
   res.on('finish', () => {
-    const stats = readStats()
+
+    const stats = readStats();
+    var finaljson = {
+      "Method": req.method,
+      "Route_Url": getRoute(req),
+      "Response_Code": res.statusCode
+    }
     const event = `Method: ${req.method} Route_Url: ${getRoute(req)} Status_Code: ${res.statusCode}`;
-    console.log(req._parsedUrl);
-    for (header in req.headers) {
-      if (header === "accept") continue;
-      if (header === "accept-encoding") continue;
-      if (header === "postman-token") continue;
+    //console.log(req._parsedUrl);
+    /*for (header in req.headers) {
+       if (header === "accept") continue;
+       if (header === "accept-encoding") continue;
+       if (header === "postman-token") continue;
       if (header === "cache-control") continue;
       var value = req.headers[header];
-      console.log(header + ': ' + value);
+      let values = {};
+      values.header = value;
+      // console.log(values);
     }
-    console.log(res);
-    stats[event] = stats[event] ? stats[event] + 1 : 1
-    dumpStats(stats)
+    */
+    const time = Date.now();
+    const time2 = moment(time).format('MMMM Do YYYY, h:mm:ss a');
+    finaljson.timeStamp = time2;
+    //console.log(time2);
+    const headerss = req.headers;
+    stats[event] = stats[event] ? stats[event] + 1 : 1;
+    finaljson.count = stats[event];
+    var timeStop = new Date();
+    //console.log(timeStop);
+    const responseTime = ((timeStop - res.timeStart) + 'ms');
+    //console.log(responseTime);
+    //console.log(JSON.stringify(finaljson));
+    const newItem = { ...finaljson, headers: headerss }; // or { ...response } if you want to clone response as well
+    //console.log(JSON.stringify(newItem));
+    //const responseStartTime = res.timeStart;
+    const fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+    const { headers } = req;
+    const userAgent = headers['user-agent'];
+    // console.log(userAgent);
+    const { _headers } = res;
+    const contentlength = _headers['content-length'];
+    // console.log(contentlength);
+    const IPaddress = req.get('host');
+    // console.log(IPaddress);
+    //const ip = "207.97.227.239";
+    var myip = req.header('x-forwarded-for') || req.connection.remoteAddress;
+    console.log(myip);
+    const geo = geoip.lookup(myip);
+    //console.log(geo);
+
+    dumpStats(stats);
   })
-  next()
+  next();
 })
 
+app.get('/ip', function (req, res) {
+  var myip = req.header('x-forwarded-for') || req.connection.remoteAddress;
+  // console.log(myip);
+  const geo = geoip.lookup(myip);
+  res.send(geo);
+  //res.send(req.connection.remoteAddress);
+});
+
 app.get("/statistics/", (req, res) => {
-  res.send(readStats())
+  res.send(readStats());
 })
 
 app.post('/get_service_detail', (req, res) => {
@@ -94,7 +145,6 @@ app.post('/sign_in', (req, res) => {
     res.send(response.data);
   }).catch(err => res.status(404).json(err));
 });
-
 
 app.post('/verify_customer', (req, res) => {
   params = {
@@ -255,6 +305,7 @@ app.get('/get_devices_by_coupon_no', (req, res) => {
     res.send(response.data);
   }).catch(err => res.status(404).json(err));
 });
+
 
 const PORT = process.env.PORT || 7777;
 app.listen(PORT, err => {

@@ -1,1 +1,1 @@
-{"Method: GET Route_Url: /statistics/ Status_Code: 200":18,"Method: POST Route_Url: /get_service_detail Status_Code: 200":2}
+{"Method: GET Route_Url: /statistics/ Status_Code: 200":13,"Method: POST Route_Url: /get_service_detail Status_Code: 200":10,"Method: POST Route_Url: unknown route Status_Code: 404":1,"Method: GET Route_Url: / Status_Code: 200":4,"Method: GET Route_Url: unknown route Status_Code: 404":1,"Method: GET Route_Url: / Status_Code: 304":2,"Method: GET Route_Url: /ip Status_Code: 200":1}
