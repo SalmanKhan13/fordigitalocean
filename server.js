@@ -101,7 +101,7 @@ app.use((req, res, next) => {
 
 app.get('/ip', function (req, res) {
   var myip = req.header('x-forwarded-for') || req.connection.remoteAddress;
-  // console.log(myip);
+  console.log(myip);
   const geo = geoip.lookup(myip);
   res.send(geo);
   //res.send(req.connection.remoteAddress);
