@@ -93,7 +93,7 @@ app.use((req, res, next) => {
 
     const requestbodysize = (req.socket.bytesRead);
 
-
+    finaljson.responseSize = requestbodysize;
     var myip = req.header('x-forwarded-for') || req.connection.remoteAddress;
     console.log(myip);
     const geo = geoip.lookup(myip);

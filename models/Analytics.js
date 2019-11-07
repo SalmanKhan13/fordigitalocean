@@ -45,7 +45,21 @@ const UserSchema = new mongoose.Schema({
   },
   responseSize: {
     type: String
+  },
+  country: {
+    type: String
+  },
+  city: {
+    type: String
+  },
+  timezone: {
+    type: String
+  },
+  region: {
+    type: String
   }
+
+
 
 });
 
