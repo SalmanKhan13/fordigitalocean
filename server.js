@@ -64,7 +64,7 @@ app.use((req, res, next) => {
 
     const time = Date.now();
     const time2 = moment(time).format('MMMM Do YYYY, h:mm:ss a');
-    finaljson.timeStamp = ParseInt(time2);
+    finaljson.timeStamp = time2;
     //console.log(time2);
     const headerss = req.headers;
     stats[event] = stats[event] ? stats[event] + 1 : 1;
