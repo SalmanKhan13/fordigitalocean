@@ -89,19 +89,25 @@ app.use((req, res, next) => {
     const IPaddress = req.get('host');
     // console.log(IPaddress);
     finaljson.IPaddress = IPaddress;
-    // console.log(contentlength);
+    // console.log(contentlength);  
+
+    const requestbodysize = (req.socket.bytesRead);
+
+
     var myip = req.header('x-forwarded-for') || req.connection.remoteAddress;
-    //console.log(myip);
+    console.log(myip);
     const geo = geoip.lookup(myip);
+    console.log(geo);
     const { country, city, timezone, region } = geo;
     finaljson.country = country;
     finaljson.city = city;
+    console.log(city);
     finaljson.timezone = timezone;
     finaljson.region = region;
 
-    //console.log(geo);
-    const requestbodysize = (req.socket.bytesRead);
-    finaljson.responseSize = requestbodysize;
+
+
+
     const newItem = { ...finaljson }; // or { ...response } if you want to clone response as well
 
     //console.log((newItem));
@@ -217,7 +223,15 @@ app.get('/ip', (req, res) => {
    console.log(myip);
    const geo = geoip.lookup(myip);
    res.json(geo);
-   
+    var myip = req.header('x-forwarded-for') || req.connection.remoteAddress;
+    //console.log(myip);
+    const geo = geoip.lookup(myip);
+    const { country, city, timezone, region } = geo;
+    finaljson.country = country;
+    finaljson.city = city;
+    finaljson.timezone = timezone;
+    finaljson.region = region;
+
   //res.send(req.connection.remoteAddress);
   Analytics
     .findOne({ successfulrequest: Analytics.id })
