@@ -1,12 +1,16 @@
 const express = require("express");
 const bodyParser = require('body-parser');
-var axios = require('axios');
+const axios = require('axios');
 const fs = require('fs');
-var moment = require('moment');
-var geoip = require('geoip-lite');
+const moment = require('moment');
+const geoip = require('geoip-lite');
 const expressip = require('express-ip');
+const connectDB = require('./config/db');
 const app = express();
+const Analytics = require('./models/Analytics');
 
+// Connect Database
+connectDB();
 
 // Body parser middleware
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -14,6 +18,7 @@ app.use(bodyParser.json());
 app.use(expressip().getIpInfoMiddleware);
 
 const FILE_PATH = 'stats.json';
+var totalcount = 0;
 const getRoute = (req) => {
   const route = (req.route ? req.route.path : ''); // check if the handler exist
   const baseUrl = req.baseUrl ? req.baseUrl : ''; // adding the base url if the handler is child of other handler
@@ -43,68 +48,201 @@ const dumpStats = (stats) => {
 app.use((req, res, next) => {
   res.timeStart = new Date();
   // console.log(res.timeStart);
+
+
   res.on('finish', () => {
 
     const stats = readStats();
+
     var finaljson = {
-      "Method": req.method,
-      "Route_Url": getRoute(req),
-      "Response_Code": res.statusCode
+      "method": req.method,
+      "route_url": getRoute(req),
+      "response_code": res.statusCode
     }
     const event = `Method: ${req.method} Route_Url: ${getRoute(req)} Status_Code: ${res.statusCode}`;
     //console.log(req._parsedUrl);
-    /*for (header in req.headers) {
-       if (header === "accept") continue;
-       if (header === "accept-encoding") continue;
-       if (header === "postman-token") continue;
-      if (header === "cache-control") continue;
-      var value = req.headers[header];
-      let values = {};
-      values.header = value;
-      // console.log(values);
-    }
-    */
+
     const time = Date.now();
     const time2 = moment(time).format('MMMM Do YYYY, h:mm:ss a');
-    finaljson.timeStamp = time2;
+    finaljson.timeStamp = ParseInt(time2);
     //console.log(time2);
     const headerss = req.headers;
     stats[event] = stats[event] ? stats[event] + 1 : 1;
     finaljson.count = stats[event];
+    // totalcount = stats[event];
+    //console.log(totalcount);
     var timeStop = new Date();
     //console.log(timeStop);
     const responseTime = ((timeStop - res.timeStart) + 'ms');
+    finaljson.responseTime = responseTime;
     //console.log(responseTime);
     //console.log(JSON.stringify(finaljson));
-    const newItem = { ...finaljson, headers: headerss }; // or { ...response } if you want to clone response as well
-    //console.log(JSON.stringify(newItem));
-    //const responseStartTime = res.timeStart;
     const fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
     const { headers } = req;
     const userAgent = headers['user-agent'];
     // console.log(userAgent);
+    finaljson.fullUrl = fullUrl;
+    finaljson.userAgent = userAgent;
     const { _headers } = res;
     const contentlength = _headers['content-length'];
-    // console.log(contentlength);
+    finaljson.requestSize = contentlength;
     const IPaddress = req.get('host');
     // console.log(IPaddress);
-    //const ip = "207.97.227.239";
+    finaljson.IPaddress = IPaddress;
+    // console.log(contentlength);
     var myip = req.header('x-forwarded-for') || req.connection.remoteAddress;
-    console.log(myip);
+    //console.log(myip);
     const geo = geoip.lookup(myip);
-    //console.log(geo);
+    const { country, city, timezone, region } = geo;
+    finaljson.country = country;
+    finaljson.city = city;
+    finaljson.timezone = timezone;
+    finaljson.region = region;
 
+    //console.log(geo);
+    const requestbodysize = (req.socket.bytesRead);
+    finaljson.responseSize = requestbodysize;
+    const newItem = { ...finaljson }; // or { ...response } if you want to clone response as well
+
+    //console.log((newItem));
+    let db = new Analytics(newItem);
+    db.save()
+      .then(doc => {
+        console.log(`it coming from db boss${doc}`);
+      })
+      .catch(err => {
+        console.error(err)
+      })
+    /* if ("_contentLength" in res) {
+       let resContentLength = res['_contentLength'];
+       console.log(`if hits and result is : ${resContentLength}`);
+     } else {
+       // Try header
+       if (res.hasHeader('content-length')) {
+         let resContentLength = res.getHeader('content-length');
+         console.log(`if/else hits and result is : ${resContentLength}`);
+       }
+     }
+     */
+    //console.log(JSON.stringify(newItem));
+    //const responseStartTime = res.timeStart;
+    //const ip = "207.97.227.239";
+
+
+    if (res.statusCode === 200) {
+      Analytics
+        .findOne()
+        .then(doc => {
+          if (doc.successfulrequest) {
+            doc.successfulrequest += 1;
+            const objs = {};
+            objs.successfulrequest = doc.successfulrequest;
+            // totalcount += doc.successfulrequest;
+            Analytics.findOneAndUpdate(
+              { $set: objs }
+            ).then(aall => console.log(aall));
+            console.log('saved ok/request');
+            //var sr = (doc.successfulrequest += 1);
+          }
+
+          // console.log(doc);
+          //console.log("retrieved records:");
+        })
+        .catch(err => {
+          console.error(err)
+        })
+
+    }
+    else if (res.statusCode === 404) {
+      console.log("Failed Block hits");
+      Analytics
+        .findOne()
+        .then(docs => {
+
+          if (docs.failedrequest) {
+            docs.failedrequest += 1;
+            const objs = {};
+            objs.failedrequest = docs.failedrequest;
+            //console.log(objs.failedrequest);
+            // totalcount += docs.failedrequest;
+            Analytics.findOneAndUpdate(
+              { $set: objs }
+            ).then(failall => console.log(failall)).catch(err => {
+              console.error(err)
+            });
+            //var sr = (doc.successfulrequest += 1);
+            console.log('saved fail/request');
+          }
+
+          // console.log(doc);
+          //console.log("retrieved records:");
+        })
+        .catch(err => {
+          console.error(err)
+        })
+    }
+    else {
+      Analytics
+        .findOne()
+        .then(docs => {
+          console.log(docs);
+          if (docs.otherrequest) {
+            docs.otherrequest += 1;
+            const objs = {};
+            objs.otherrequest = docs.otherrequest;
+            console.log(objs.otherrequest);
+            //totalcount += docs.otherrequest;
+            Analytics.findOneAndUpdate(
+              { $set: objs }
+            ).then(otherall => console.log(otherall));
+            //var sr = (doc.successfulrequest += 1);
+          }
+          console.log('saved  it Man/else hit');
+          // console.log(doc);
+          //console.log("retrieved records:");
+        })
+        .catch(err => {
+          console.error(err)
+        })
+    }
+    //  console.log(totalcount);
     dumpStats(stats);
   })
+
   next();
 })
 
-app.get('/ip', function (req, res) {
-  var myip = req.header('x-forwarded-for') || req.connection.remoteAddress;
-  console.log(myip);
-  const geo = geoip.lookup(myip);
-  res.send(geo);
+app.get('/ip', (req, res) => {
+  /* var myip = req.header('x-forwarded-for') || req.connection.remoteAddress;
+   console.log(myip);
+   const geo = geoip.lookup(myip);
+   res.json(geo);
+   
   //res.send(req.connection.remoteAddress);
+  Analytics
+    .findOne({ successfulrequest: Analytics.id })
+    .then(doc => {
+      //console.log(`result hit ${successfulrequest}`);
+      console.log(`doc hit ${doc}`);
+      if (doc.successfulrequest) {
+        doc.successfulrequest += 1;
+
+        const objs = {};
+        objs.successfulrequest = doc.successfulrequest;
+        totalcount += doc.successfulrequest;
+        Analytics.findOneAndUpdate(
+          { $set: objs }
+        ).then(aall => console.log(aall));
+        //var sr = (doc.successfulrequest += 1);
+      }
+      console.log('saved itititit Man');
+      // console.log(doc);
+      //console.log("retrieved records:");
+    })
+    .catch(err => {
+      console.error(err)
+    })
+    */
 });
 
 app.get("/statistics/", (req, res) => {
@@ -462,3 +600,14 @@ app.listen(PORT, err => {
     console.log("Error: " + err.message);
   });
 */
+/*for (header in req.headers) {
+       if (header === "accept") continue;
+       if (header === "accept-encoding") continue;
+       if (header === "postman-token") continue;
+      if (header === "cache-control") continue;
+      var value = req.headers[header];
+      let values = {};
+      values.header = value;
+      // console.log(values);
+    }
+    */
