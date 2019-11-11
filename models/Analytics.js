@@ -10,7 +10,13 @@ const UserSchema = new mongoose.Schema({
   otherrequest: {
     type: Number
   },
+  unauthorizedrequest: {
+    type: Number
+  },
   totalrequest: {
+    type: Number
+  },
+  datatransfer: {
     type: Number
   },
   method: {
@@ -29,7 +35,7 @@ const UserSchema = new mongoose.Schema({
     type: Number
   },
   responseTime: {
-    type: String
+    type: Number
   },
   fullUrl: {
     type: String
@@ -44,7 +50,7 @@ const UserSchema = new mongoose.Schema({
     type: String
   },
   responseSize: {
-    type: String
+    type: Number
   },
   country: {
     type: String
@@ -57,10 +63,22 @@ const UserSchema = new mongoose.Schema({
   },
   region: {
     type: String
+  },
+  servicestatusCode: {
+    type: Number
+  },
+  serviceresponseTime: {
+    type: String
+  },
+  counter: {
+    type: Number
+  },
+  averageresponsetime: {
+    type: Number
+  },
+  sumresponsetime: {
+    type: Number
   }
-
-
-
 });
 
 module.exports = Analytics = mongoose.model('analytics', UserSchema);
