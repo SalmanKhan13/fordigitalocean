@@ -271,45 +271,20 @@ app.use((req, res, next) => {
 })
 
 app.get('/ip', (req, res) => {
-  /* var myip = req.header('x-forwarded-for') || req.connection.remoteAddress;
-   console.log(myip);
-   const geo = geoip.lookup(myip);
-   res.json(geo);
-    var myip = req.header('x-forwarded-for') || req.connection.remoteAddress;
-    //console.log(myip);
-    const geo = geoip.lookup(myip);
-    const { country, city, timezone, region } = geo;
-    finaljson.country = country;
-    finaljson.city = city;
-    finaljson.timezone = timezone;
-    finaljson.region = region;
-
-  //res.send(req.connection.remoteAddress);
-  Analytics
-    .findOne({ successfulrequest: Analytics.id })
-    .then(doc => {
-      //console.log(`result hit ${successfulrequest}`);
-      console.log(`doc hit ${doc}`);
-      if (doc.successfulrequest) {
-        doc.successfulrequest += 1;
-
-        const objs = {};
-        objs.successfulrequest = doc.successfulrequest;
-        totalcount += doc.successfulrequest;
-        Analytics.findOneAndUpdate(
-          { $set: objs }
-        ).then(aall => console.log(aall));
-        //var sr = (doc.successfulrequest += 1);
-      }
-      console.log('saved itititit Man');
-      // console.log(doc);
-      //console.log("retrieved records:");
-    })
-    .catch(err => {
-      console.error(err)
-    })
-    */
+  /*
+    Analytics
+      .findOne({})
+      .then(doc => {
+        res.json(doc);
+      }).catch(err => {
+        console.error(err)
+      });
+      */
+  Analytics.find({}).then(function (users) {
+    res.send(users);
+  });
 });
+
 
 app.get("/statistics/", (req, res) => {
   res.send(readStats());
@@ -780,4 +755,41 @@ app.listen(PORT, err => {
       values.header = value;
       // console.log(values);
     }
+    /* var myip = req.header('x-forwarded-for') || req.connection.remoteAddress;
+   console.log(myip);
+   const geo = geoip.lookup(myip);
+   res.json(geo);
+    var myip = req.header('x-forwarded-for') || req.connection.remoteAddress;
+    //console.log(myip);
+    const geo = geoip.lookup(myip);
+    const { country, city, timezone, region } = geo;
+    finaljson.country = country;
+    finaljson.city = city;
+    finaljson.timezone = timezone;
+    finaljson.region = region;
+
+  //res.send(req.connection.remoteAddress);
+  Analytics
+    .findOne({ successfulrequest: Analytics.id })
+    .then(doc => {
+      //console.log(`result hit ${successfulrequest}`);
+      console.log(`doc hit ${doc}`);
+      if (doc.successfulrequest) {
+        doc.successfulrequest += 1;
+
+        const objs = {};
+        objs.successfulrequest = doc.successfulrequest;
+        totalcount += doc.successfulrequest;
+        Analytics.findOneAndUpdate(
+          { $set: objs }
+        ).then(aall => console.log(aall));
+        //var sr = (doc.successfulrequest += 1);
+      }
+      console.log('saved itititit Man');
+      // console.log(doc);
+      //console.log("retrieved records:");
+    })
+    .catch(err => {
+      console.error(err)
+    })
     */
