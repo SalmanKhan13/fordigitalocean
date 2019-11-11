@@ -137,19 +137,19 @@ app.use((req, res, next) => {
         console.error(err)
       })
 
-    /*
-        var myip = req.header('x-forwarded-for') || req.connection.remoteAddress;
-        console.log(myip);
-        const geo = geoip.lookup(myip);
-        console.log(geo);
-        const { country, city, timezone, region } = geo;
-        finaljson.country = country;
-        finaljson.city = city;
-        console.log(city);
-        finaljson.timezone = timezone;
-        finaljson.region = region;
-    
-    */
+
+    var myip = req.header('x-forwarded-for') || req.connection.remoteAddress;
+    console.log(myip);
+    const geo = geoip.lookup(myip);
+    console.log(geo);
+    const { country, city, timezone, region } = geo;
+    finaljson.country = country;
+    finaljson.city = city;
+    console.log(city);
+    finaljson.timezone = timezone;
+    finaljson.region = region;
+
+
     const newItem = { ...finaljson, ...fjson }; // or { ...response } if you want to clone response as well
 
     console.log((newItem));
